@@ -1,9 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken"
+import { CustomRequest } from "../config/type";
 
-interface CustomRequest extends Request {
-    token: string | JwtPayload
-}
+
 
 function verifyToken(req: Request, res: Response, next: NextFunction) {
     try {

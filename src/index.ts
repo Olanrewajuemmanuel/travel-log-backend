@@ -7,6 +7,8 @@ import { connect } from "mongoose";
 import userRouter from "./routes/auth";
 import feedRouter from "./routes/feed";
 import profileRouter from "./routes/profile";
+import path from "path";
+import multer from "multer";
 
 dotenv.config();
 
@@ -19,11 +21,20 @@ const PORT = process.env.PORT || 4000;
 async function initializeApp(app: Express) {
   // middlewares
   app.use(morgan("dev"));
-  // app.use(express.json());
-  app.use(express.urlencoded({ extended: true, limit: "5mb" }));
+  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json());
+  app.use(express.static(path.join(__dirname, "uploads")))
+
   app.use(cors());
   app.use(helmet());
   app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === "LIMIT_FILE_SIZE") {
+        return res.json({
+          message: "file is too large, max_size: 2MB"
+        })
+      }
+    }
     res.status(500);
     res.send(err.stack);
   });

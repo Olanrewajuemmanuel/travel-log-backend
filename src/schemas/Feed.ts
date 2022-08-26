@@ -19,8 +19,9 @@ const Feed = new Schema({
   },
   userId: {
     type: Schema.Types.ObjectId,
-    required: true,
-    unique: true,
+    required: true, // user can create multiple feeds
+    unique: false
+
   },
   dateModified: {
     type: Date,
@@ -36,7 +37,10 @@ const Feed = new Schema({
     type: String,
     required: true
   },
-  location: String,
+  location: {
+    type: String,
+    required: true
+  },
   imgSet: [String],
   likes: {
     type: Number,
