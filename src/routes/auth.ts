@@ -22,7 +22,6 @@ userRouter.post(
   check("username").trim(),
   check("password1").isLength({ min: 8 }),
   check("passwordVerify").isLength({ min: 8 }),
-  check("phone").isLength({ min: 9 }),
   check("lastName").trim().escape(),
   check("firstName").trim().escape(),
   check("email").trim().isEmail().normalizeEmail(),
@@ -34,12 +33,16 @@ userRouter.post(
     }
     // no validation errors
     // check if user already exists in DB
-    const user = await UserSchema.findOne({ username, email });
+    const user = await UserSchema.findOne({ email }) || await UserSchema.findOne({ username });  
 
-    if (user) return res.status(400).send("user already exists!");
+    if (user) return res.status(400).json({
+      message: "User already exists"
+    });
     // if not, compare passwords and encrypt password
     if (!(password1 === passwordVerify))
-      return res.status(400).send("Passwords do not match");
+      return res.status(400).json({
+        message: "Passwords do not match"
+      });
     const hashPassword = await bcrypt.hash(password1 as string, 10);
     // save info
     const newUser = new UserSchema(
@@ -87,10 +90,14 @@ userRouter.post(
     const user = await UserSchema.findOne({
       $or: [{ username: userOrEmail }, { email: userOrEmail }],
     });
-    if (!user) return res.status(404).send("User does not exist");
+    if (!user) return res.status(404).json({
+      message: "User does not exist"
+    })
     // check and compare pass
     bcrypt.compare(password, user.password, (err, success) => {
-      if (err) return res.status(400).send("Username or password is incorrect");
+      if (err) return res.status(400).json({
+        message: "Username or password is incorrect"
+      })
       //  send jwt token
       const token = jwt.sign(
         { user: user.id },
