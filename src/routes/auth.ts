@@ -2,8 +2,9 @@ import { Router } from "express";
 import { body, validationResult, check } from "express-validator";
 import UserSchema from "../schemas/User";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { CustomRequest } from "../config/type";
+import { TransformStreamDefaultController } from "stream/web";
 
 const userRouter = Router();
 interface Register {
@@ -15,6 +16,11 @@ interface Register {
   firstName: string | undefined;
   profile_pic: string | undefined;
   email: string | undefined;
+}
+function setTokenCookies(access: string, refresh: string, req: any, res: any) {
+  // save tokens in cookie
+  res.cookie("accessToken", access, { httpOnly: true });
+  res.cookie("refreshToken", refresh, { httpOnly: true });
 }
 
 userRouter.post(
@@ -33,15 +39,18 @@ userRouter.post(
     }
     // no validation errors
     // check if user already exists in DB
-    const user = await UserSchema.findOne({ email }) || await UserSchema.findOne({ username });  
+    const user =
+      (await UserSchema.findOne({ email })) ||
+      (await UserSchema.findOne({ username }));
 
-    if (user) return res.status(400).json({
-      message: "User already exists"
-    });
+    if (user)
+      return res.status(400).json({
+        message: "User already exists",
+      });
     // if not, compare passwords and encrypt password
     if (!(password1 === passwordVerify))
       return res.status(400).json({
-        message: "Passwords do not match"
+        message: "Passwords do not match",
       });
     const hashPassword = await bcrypt.hash(password1 as string, 10);
     // save info
@@ -56,16 +65,18 @@ userRouter.post(
       process.env.JWT_SECRET as string,
       { expiresIn: "1h" }
     );
-    const refreshtoken = jwt.sign(
+    const refreshToken = jwt.sign(
       { user: newUser.id },
       process.env.JWT_REFRESH_TOKEN as string,
       { expiresIn: "3 days" }
     );
 
+    // save tokens in cookie
+    setTokenCookies(token, refreshToken, req, res);
+
     // Registration success
     return res.status(201).json({
       token,
-      refreshtoken,
       user: {
         id: newUser.id,
         username: newUser.username,
@@ -90,14 +101,16 @@ userRouter.post(
     const user = await UserSchema.findOne({
       $or: [{ username: userOrEmail }, { email: userOrEmail }],
     });
-    if (!user) return res.status(404).json({
-      message: "User does not exist"
-    })
+    if (!user)
+      return res.status(404).json({
+        message: "User does not exist",
+      });
     // check and compare pass
     bcrypt.compare(password, user.password, (err, success) => {
-      if (err) return res.status(400).json({
-        message: "Username or password is incorrect"
-      })
+      if (err)
+        return res.status(400).json({
+          message: "Username or password is incorrect",
+        });
       //  send jwt token
       const token = jwt.sign(
         { user: user.id },
@@ -109,6 +122,8 @@ userRouter.post(
         process.env.JWT_REFRESH_TOKEN as string,
         { expiresIn: "3 days" }
       );
+      // save tokens in cookie
+      setTokenCookies(token, refreshtoken, req, res);
 
       // Login success
       return res.status(200).json({
@@ -131,13 +146,20 @@ userRouter.post("/refresh", async (req, res) => {
 
   // verify access token
   try {
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_TOKEN as string);
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_TOKEN as string
+    );
     // pass
     if (decoded) {
-      const newToken = jwt.sign({ user: (req as any).token.user }, process.env.JWT_SECRET as string, { expiresIn: '1h' })
+      const newToken = jwt.sign(
+        { user: (req as any).token.user },
+        process.env.JWT_SECRET as string,
+        { expiresIn: "1h" }
+      );
       return res.json({
-        token: newToken
-      })
+        token: newToken,
+      });
     }
   } catch (e) {
     return res.status(400).send(e);

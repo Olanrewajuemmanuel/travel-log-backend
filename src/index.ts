@@ -7,8 +7,9 @@ import { connect } from "mongoose";
 import userRouter from "./routes/auth";
 import feedRouter from "./routes/feed";
 import profileRouter from "./routes/profile";
-import path from "path";
 import multer from "multer";
+import cookieParser from "cookie-parser"
+import {expressjwt} from "express-jwt"
 
 dotenv.config();
 
@@ -26,6 +27,15 @@ async function initializeApp(app: Express) {
 
   app.use(cors());
   app.use(helmet());
+  app.use(cookieParser())
+  app.use(expressjwt({
+    secret: process.env.JWT_SECRET as string,
+    algorithms: ['HS256'],
+    getToken: (req: any) => {
+      return req.cookies.accessToken
+    },
+  }).unless({ path: ['/user/login', '/user/register'] })
+  )
   app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     if (err instanceof multer.MulterError) {
       if (err.code === "LIMIT_FILE_SIZE") {
