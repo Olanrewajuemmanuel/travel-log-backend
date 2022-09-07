@@ -25,7 +25,10 @@ async function initializeApp(app: Express) {
   app.use(express.urlencoded({ extended: true, limit: '5mb' }));
   app.use(express.json());
 
-  app.use(cors());
+  app.use(cors({
+    origin: 'http://localhost:3000',
+    credentials: true,
+  }));
   app.use(helmet());
   app.use(cookieParser())
   app.use(expressjwt({
@@ -34,7 +37,7 @@ async function initializeApp(app: Express) {
     getToken: (req: any) => {
       return req.cookies.accessToken
     },
-  }).unless({ path: ['/user/login', '/user/register'] })
+  }).unless({ path: ['/user/login', '/user/register', '/user/refresh', '/user/logout'] })
   )
   app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     if (err instanceof multer.MulterError) {

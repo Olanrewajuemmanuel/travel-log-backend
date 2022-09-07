@@ -4,7 +4,6 @@ import UserSchema from "../schemas/User";
 import bcrypt from "bcryptjs";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { CustomRequest } from "../config/type";
-import { TransformStreamDefaultController } from "stream/web";
 
 const userRouter = Router();
 interface Register {
@@ -19,7 +18,7 @@ interface Register {
 }
 function setTokenCookies(access: string, refresh: string, req: any, res: any) {
   // save tokens in cookie
-  res.cookie("accessToken", access, { httpOnly: true });
+  res.cookie("accessToken", access);
   res.cookie("refreshToken", refresh, { httpOnly: true });
 }
 
@@ -115,7 +114,7 @@ userRouter.post(
       const token = jwt.sign(
         { user: user.id },
         process.env.JWT_SECRET as string,
-        { expiresIn: "1h" }
+        { expiresIn: "2m" }
       );
       const refreshtoken = jwt.sign(
         { user: user.id },
@@ -140,30 +139,31 @@ userRouter.post(
   }
 );
 
-userRouter.post("/refresh", async (req, res) => {
-  const refreshToken = req.body.refreshToken;
+userRouter.post("/logout", async (req, res) => {
+  res.clearCookie('accessToken')
+  return res.json({ message: "Logout Success" })
+})
+
+userRouter.post("/refresh", (req, res) => {
+  
+  const refreshToken = req.cookies.refreshToken;
+  
+ 
+  
   if (!refreshToken) return res.sendStatus(401);
 
   // verify access token
-  try {
-    const decoded = jwt.verify(
-      refreshToken,
-      process.env.JWT_REFRESH_TOKEN as string
-    );
-    // pass
-    if (decoded) {
-      const newToken = jwt.sign(
-        { user: (req as any).token.user },
-        process.env.JWT_SECRET as string,
-        { expiresIn: "1h" }
-      );
-      return res.json({
-        token: newToken,
-      });
-    }
-  } catch (e) {
-    return res.status(400).send(e);
-  }
+  jwt.verify(refreshToken, process.env.JWT_REFRESH_TOKEN as string, (err: any, decoded: any) => {
+    if (err) return res.status(400).json({ message: 'Invalid token, Unauthorized!' })
+    
+    const accessToken = jwt.sign({
+      user: decoded.user
+    }, process.env.JWT_SECRET as string, { expiresIn: '1h' })
+
+    // save newtoken in cookie
+    setTokenCookies(accessToken, refreshToken, req, res)
+    return res.json({ token: accessToken })
+  })
 });
 
 export default userRouter;
