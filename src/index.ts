@@ -10,6 +10,7 @@ import profileRouter from "./routes/profile";
 import multer from "multer";
 import cookieParser from "cookie-parser"
 import {expressjwt} from "express-jwt"
+import path from "path";
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ async function initializeApp(app: Express) {
   app.use(morgan("dev"));
   app.use(express.urlencoded({ extended: true, limit: '5mb' }));
   app.use(express.json());
+  app.use(express.static("uploads"))
 
   app.use(cors({
     origin: 'http://localhost:3000',
