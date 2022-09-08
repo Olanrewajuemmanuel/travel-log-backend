@@ -1,9 +1,11 @@
 import { Request, Router } from "express";
 import { check, validationResult } from "express-validator";
 import { JwtPayload } from "jsonwebtoken";
+import { Document, Error } from "mongoose";
 import { upload } from "../fileUploadLogic";
 import verifyToken from "../middlewares";
 import FeedSchema from "../schemas/Feed";
+import UserSchema from "../schemas/User";
 
 const feedRouter = Router();
 
@@ -38,8 +40,8 @@ feedRouter.post(
 
 // GET /feed --> AllFeeds
 feedRouter.get("/", verifyToken, async (req, res) => {
-  const allFeeds = await FeedSchema.find({});
-
+  const allFeeds = await FeedSchema.find({});  
+  
   return res.send(allFeeds);
 });
 

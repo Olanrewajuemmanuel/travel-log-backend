@@ -1,4 +1,5 @@
 import { Document, model, ObjectId, Schema } from "mongoose";
+import UserSchema from "./User";
 
 interface FeedDocument extends Document {
   userhasLiked: boolean;
@@ -23,6 +24,7 @@ const Feed = new Schema({
     unique: false
 
   },
+  username: String,
   dateModified: {
     type: Date,
     default: Date.now,
@@ -51,6 +53,12 @@ const Feed = new Schema({
     default: true,
   },
 });
+
+Feed.pre("save", async function (next) {
+  const doc = await UserSchema.findById(this.userId).select('username')
+  this.username = doc?.username
+  next()
+})
 
 const FeedSchema = model<FeedDocument>("Feed", Feed);
 export default FeedSchema;

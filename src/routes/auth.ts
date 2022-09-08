@@ -114,7 +114,7 @@ userRouter.post(
       const token = jwt.sign(
         { user: user.id },
         process.env.JWT_SECRET as string,
-        { expiresIn: "2m" }
+        { expiresIn: "1h" }
       );
       const refreshtoken = jwt.sign(
         { user: user.id },
