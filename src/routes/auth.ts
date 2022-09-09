@@ -106,64 +106,72 @@ userRouter.post(
       });
     // check and compare pass
     bcrypt.compare(password, user.password, (err, success) => {
-      if (err)
-        return res.status(400).json({
-          message: "Username or password is incorrect",
-        });
-      //  send jwt token
-      const token = jwt.sign(
-        { user: user.id },
-        process.env.JWT_SECRET as string,
-        { expiresIn: "1h" }
-      );
-      const refreshtoken = jwt.sign(
-        { user: user.id },
-        process.env.JWT_REFRESH_TOKEN as string,
-        { expiresIn: "3 days" }
-      );
-      // save tokens in cookie
-      setTokenCookies(token, refreshtoken, req, res);
+      if (success) {
+        //  send jwt token
+        const token = jwt.sign(
+          { user: user.id },
+          process.env.JWT_SECRET as string,
+          { expiresIn: "1h" }
+        );
+        const refreshtoken = jwt.sign(
+          { user: user.id },
+          process.env.JWT_REFRESH_TOKEN as string,
+          { expiresIn: "3 days" }
+        );
+        // save tokens in cookie
+        setTokenCookies(token, refreshtoken, req, res);
 
-      // Login success
-      return res.status(200).json({
-        token,
-        refreshtoken,
-        user: {
-          id: user.id,
-          username: user.username,
-          profile_pic: user.profile_pic,
-          email: user.email,
-        },
-      });
+        // Login success
+        return res.status(200).json({
+          token,
+          refreshtoken,
+          user: {
+            id: user.id,
+            username: user.username,
+            profile_pic: user.profile_pic,
+            email: user.email,
+          },
+        });
+      } else {
+        return res.status(400).json({ message: "Username or password is incorrect." })
+      }
     });
   }
 );
 
 userRouter.post("/logout", async (req, res) => {
-  res.clearCookie('accessToken')
-  return res.json({ message: "Logout Success" })
-})
+  res.clearCookie("accessToken");
+  return res.json({ message: "Logout Success" });
+});
 
 userRouter.post("/refresh", (req, res) => {
-  
   const refreshToken = req.cookies.refreshToken;
-  
- 
-  
+
   if (!refreshToken) return res.sendStatus(401);
 
   // verify access token
-  jwt.verify(refreshToken, process.env.JWT_REFRESH_TOKEN as string, (err: any, decoded: any) => {
-    if (err) return res.status(400).json({ message: 'Invalid token, Unauthorized!' })
-    
-    const accessToken = jwt.sign({
-      user: decoded.user
-    }, process.env.JWT_SECRET as string, { expiresIn: '1h' })
+  jwt.verify(
+    refreshToken,
+    process.env.JWT_REFRESH_TOKEN as string,
+    (err: any, decoded: any) => {
+      if (err)
+        return res
+          .status(400)
+          .json({ message: "Invalid token, Unauthorized!" });
 
-    // save newtoken in cookie
-    setTokenCookies(accessToken, refreshToken, req, res)
-    return res.json({ token: accessToken })
-  })
+      const accessToken = jwt.sign(
+        {
+          user: decoded.user,
+        },
+        process.env.JWT_SECRET as string,
+        { expiresIn: "1h" }
+      );
+
+      // save newtoken in cookie
+      setTokenCookies(accessToken, refreshToken, req, res);
+      return res.json({ token: accessToken });
+    }
+  );
 });
 
 export default userRouter;
