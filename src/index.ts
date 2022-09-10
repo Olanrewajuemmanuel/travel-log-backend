@@ -59,17 +59,21 @@ async function initializeApp(app: Express) {
   app.use("/profile", profileRouter);
 
   // connect to mongoDB
-  const connection = await connect(process.env.MONGO_URI as string);
-  if (connection) {
-    return Promise.resolve();
-  } else {
-    return Promise.reject();
+  try {
+    const connection = await connect(process.env.MONGO_URI as string);
+    if (connection) {
+      return Promise.resolve("--- Mongo DB is connected ---");
+    }
+  } catch(err) {
+    return Promise.reject(err)
   }
 }
+// TODO: Try, catch block for this!!
 
 initializeApp(app)
-  .then(() => {
-    console.log("--- Mongo DB is connected ---");
+  .then((res) => {
+    console.log(res);
+    // start server
 
     app.listen(PORT, () =>
       console.log(`Server is now running on port ${PORT}`)
