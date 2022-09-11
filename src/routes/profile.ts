@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { CustomRequest } from "../config/type";
 import { upload } from "../fileUploadLogic";
 import verifyToken from "../middlewares";
@@ -6,12 +6,23 @@ import UserSchema from "../schemas/User";
 
 const profileRouter = Router();
 
-profileRouter.get("/:username", async (req, res) => {
-  const doc = await UserSchema.findOne({ username: req.params.username });
+profileRouter.get("/:username", verifyToken, async (req, res, next) => {
+  // check if username requested is equals to current user logged in
+
+  const decoded = (req as any).token;
+  
+  const doc = await UserSchema.findOne({ username: req.params.username }).select("-password -phone");
   if (!doc) return res.status(404).json({
     message: "Not found"
   });
-  return res.send(doc);
+  if (decoded && doc.id === decoded.user) {
+    return res.json({
+      doc,
+      currentUserProfile: true
+    })
+  } else {
+    res.json({doc})
+  }
 });
 
 profileRouter.post(

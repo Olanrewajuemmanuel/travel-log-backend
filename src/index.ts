@@ -10,7 +10,6 @@ import profileRouter from "./routes/profile";
 import multer from "multer";
 import cookieParser from "cookie-parser"
 import {expressjwt} from "express-jwt"
-import path from "path";
 
 dotenv.config();
 
