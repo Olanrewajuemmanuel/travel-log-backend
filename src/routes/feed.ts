@@ -40,7 +40,7 @@ feedRouter.post(
 
 // GET /feed --> AllFeeds
 feedRouter.get("/", verifyToken, async (req, res) => {
-  const allFeeds = await FeedSchema.find({});  
+  const allFeeds = await FeedSchema.find({}).sort("-dateModified");  
   
   return res.send(allFeeds);
 });
