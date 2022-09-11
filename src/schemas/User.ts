@@ -4,6 +4,9 @@ const User = new Schema({
     username: {
         type: String,
     },
+    description: {
+        type: String
+    },
     firstName: {
         type: String,
         required: true,
